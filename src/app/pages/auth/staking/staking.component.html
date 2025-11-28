@@ -1,0 +1,38 @@
+<!-- src/app/components/staking/staking.component.html
+<div class="staking-card">
+  <h2>ATT Staking</h2>
+
+  <div *ngIf="!account">
+    <button (click)="connect()" class="btn">Connect Wallet</button>
+  </div>
+
+  <div *ngIf="account" class="info">
+    <p><strong>Account:</strong> {{ account }}</p>
+    <p><strong>ATT Balance:</strong> {{ balance }} {{ symbol }}</p>
+    <p><strong>Staked:</strong> {{ staked }} {{ symbol }}</p>
+    <p><strong>Pending Rewards:</strong> {{ earned }} {{ symbol }}</p>
+    <p><strong>Status:</strong> {{ txStatus }}</p>
+  </div>
+
+  <hr />
+
+  <div class="controls" *ngIf="account">
+    <div class="row">
+      <label>Amount to Stake</label>
+      <input type="number" [(ngModel)]="amountToStake" min="0" step="any" />
+      <button (click)="approve()" class="btn">Approve</button>
+      <button (click)="stake()" class="btn primary">Stake</button>
+    </div>
+
+    <div class="row">
+      <label>Amount to Unstake</label>
+      <input type="number" [(ngModel)]="amountToUnstake" min="0" step="any" />
+      <button (click)="unstake()" class="btn warn">Unstake</button>
+    </div>
+
+    <div class="row">
+      <button (click)="claim()" class="btn success">Claim Rewards</button>
+      <button (click)="refreshAll()" class="btn">Refresh</button>
+    </div>
+  </div>
+</div> -->

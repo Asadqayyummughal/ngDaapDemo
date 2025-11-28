@@ -23,6 +23,7 @@ export interface WalletState {
   isSupportedNetwork: boolean;
   balance: string | null;
   tokenContract: Contract | null;
+  routerContract: Contract | null;
 }
 export type NetworkInfo = {
   chainId: number;
@@ -45,6 +46,7 @@ export class EthWalletService implements OnDestroy {
     balance: null,
     signer: null,
     tokenContract: null,
+    routerContract: null,
   });
   public walletState$: Observable<WalletState> = this.state$.asObservable();
   private handleAccountsChangedBound = this.handleAccountsChanged.bind(this);
@@ -58,7 +60,6 @@ export class EthWalletService implements OnDestroy {
   }
 
   async initFromProvider(): Promise<void> {
-    debugger;
     if (!window.ethereum) return;
     try {
       const provider = new BrowserProvider(window.ethereum);
@@ -68,11 +69,16 @@ export class EthWalletService implements OnDestroy {
       const address = (await signer).getAddress();
       let balance_in_big_int = await provider.getBalance(address);
       const tokenContract: Contract = new ethers.Contract(
-        constants.mtt_contract_address,
+        constants.att_contract_address,
         constants.ERC20_ABI,
         await signer
       );
-      console.log("tokenContract==>", tokenContract);
+
+      // const router = new ethers.Contract(
+      //   constants.UNISWAP_ROUTER_ADDRESS,
+      //   UNISWAP_V2_ROUTER_ABI,
+      //   await signer
+      // );
       this.setState({
         provider,
         chainId: toHex(Number()),
@@ -85,6 +91,7 @@ export class EthWalletService implements OnDestroy {
         signer: signer,
         balance: formatEther(balance_in_big_int),
         tokenContract: tokenContract,
+        // routerContract: router,
       });
     } catch (err) {
       console.error("initFromProvider error", err);
@@ -229,25 +236,21 @@ export class EthWalletService implements OnDestroy {
   }
   // Get token info
   async getTokenInfo() {
-    setTimeout(async () => {
-      const tokenContract = this.getStateProp("tokenContract");
-      console.log("tokenContract", tokenContract);
-      debugger;
-      if (!tokenContract) {
-        throw new Error("Token contract is not initialized yet.");
-      }
-      const name = await tokenContract["name"]();
-      const symbol = await tokenContract["symbol"]();
-      const decimals = await tokenContract["decimals"]();
-      const totalSupply = await tokenContract["totalSupply"]();
+    const tokenContract = this.getStateProp("tokenContract");
+    if (!tokenContract) {
+      throw new Error("Token contract is not initialized yet.");
+    }
+    const name = await tokenContract["name"]();
+    const symbol = await tokenContract["symbol"]();
+    const decimals = await tokenContract["decimals"]();
+    const totalSupply = await tokenContract["totalSupply"]();
 
-      return {
-        name,
-        symbol,
-        decimals,
-        totalSupply: ethers.formatUnits(totalSupply, decimals),
-      };
-    }, 5000);
+    return {
+      name,
+      symbol,
+      decimals,
+      totalSupply: ethers.formatUnits(totalSupply, decimals),
+    };
   }
   // Get token balance of a wallet
   async getBalance(walletAddress: string): Promise<string> {
@@ -267,7 +270,6 @@ export class EthWalletService implements OnDestroy {
     if (!tokenContract) {
       throw new Error("Token contract is not initialized yet.");
     }
-
     const decimals = await tokenContract["decimals"]();
     const tx = await tokenContract["transfer"](
       to,
@@ -276,7 +278,7 @@ export class EthWalletService implements OnDestroy {
     console.log("Transaction hash:", tx.hash);
 
     await tx.wait();
-    console.log("Transfer completed!");
+    console.log("Transfer completed!", tx);
 
     return tx.hash;
   }
@@ -298,6 +300,83 @@ export class EthWalletService implements OnDestroy {
     console.log("Mint transaction confirmed!");
 
     return tx.hash;
+  }
+  // swapin func
+  async approveToken(token: string, amount: string) {
+    const signer = this.getStateProp("signer");
+    const routerAddress = constants.UNISWAP_ROUTER_ADDRESS;
+
+    const tokenContract = new ethers.Contract(
+      token,
+      constants.ERC20_ABI,
+      signer
+    );
+    const decimals = await tokenContract["decimals"]();
+
+    const tx = await tokenContract["approve"](
+      routerAddress,
+      ethers.parseUnits(amount, decimals)
+    );
+
+    await tx.wait();
+    return tx.hash;
+  }
+  async swapTokens(amount: string, path: string[]): Promise<string> {
+    const router = this.getStateProp("routerContract");
+    const signer = this.getStateProp("signer");
+    const user = await signer.getAddress();
+    if (!router) {
+      throw new Error("RouterContract is not initialized yet.");
+    }
+    const decimals = await new ethers.Contract(
+      path[0],
+      constants.ERC20_ABI,
+      signer
+    )["decimals"]();
+
+    const tx = await router["swapExactTokensForTokens"](
+      ethers.parseUnits(amount, decimals),
+      0, // min out
+      path,
+      user,
+      Math.floor(Date.now() / 1000) + 60 * 5
+    );
+
+    await tx.wait();
+    return tx.hash;
+    //swap eth token
+    // const tx = await router.swapExactETHForTokens(
+    //   0,
+    //   [WETH_ADDRESS, ATT_ADDRESS],
+    //   userAddress,
+    //   Math.floor(Date.now() / 1000) + 600,
+    //   { value: ethers.parseEther("0.1") }
+    // );
+  }
+
+  async getSwapOutput(amountIn: string, path: string[]): Promise<string> {
+    const router = this.getStateProp("routerContract");
+    if (!router) throw new Error("Router not initialized");
+    const tokenIn = path[0];
+    const tokenOut = path[path.length - 1];
+
+    const decimalsIn = await new ethers.Contract(
+      tokenIn,
+      constants.ERC20_ABI,
+      this.getStateProp("provider")
+    )["decimals"]();
+    const decimalsOut = await new ethers.Contract(
+      tokenOut,
+      constants.ERC20_ABI,
+      this.getStateProp("provider")
+    )["decimals"]();
+
+    const amounts = await router["getAmountsOut"](
+      ethers.parseUnits(amountIn, decimalsIn),
+      path
+    );
+
+    return ethers.formatUnits(amounts[amounts.length - 1], decimalsOut);
   }
 
   // ✅ Unsubscribe listeners

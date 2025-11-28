@@ -3,7 +3,7 @@ import { ChangeDetectorRef, Component } from "@angular/core";
 import { EthWalletService } from "@pages/services/eth-wallet.service";
 import { BrowserProvider, Contract, ethers, Signer } from "ethers";
 import { Subscription } from "rxjs";
-import { ERC20_ABI } from "src/app/abi/erc20.abi";
+import { ERC20_ABI } from "src/app/abis/erc20.abi";
 import { constants } from "src/app/constants";
 import { FormateAddressPipe } from "src/app/shared/pipes/formate-address.pipe";
 import { copyToClipboard } from "src/app/utils/crypto.utils";
@@ -53,6 +53,8 @@ export class NavBarComponent {
   }
   ngOnInit() {
     this.walletService.initFromProvider();
+  }
+  getTokenInfo() {
     this.walletService
       .getTokenInfo()
       .then((resp) => console.log("res of  getTokenINfo--------->", resp));
@@ -181,7 +183,23 @@ export class NavBarComponent {
       signer
     );
   }
-
+  transferToken() {
+    this.walletService.transfer(constants.receiver, "10").then((resp) => {
+      console.log("check transfer tokens", resp);
+    });
+  }
+  getTokenBal() {
+    if (this.account)
+      this.walletService.getBalance(this.account).then((resp) => {
+        console.log(`getTokenBal of ${this.account}`, resp);
+      });
+  }
+  goToSwapUi() {}
+  mintToken() {
+    this.walletService.mint(constants.receiver, "10").then((resp) => {
+      console.log("response of token minting", resp);
+    });
+  }
   ngOnDestroy() {
     this.sub.unsubscribe();
   }

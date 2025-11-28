@@ -1,0 +1,106 @@
+<!-- network info -->
+<div class="flex gap-5">
+  <!-- right side content -->
+  <div *ngIf="account" class="wallet-info flex items-center gap-2">
+    <span class="text-sm text-blue-500" *ngIf="chainName && account"
+      >Network: {{ chainName }}</span
+    >
+    <span *ngIf="!chainName && account">Network: Disconnected</span>
+    <span *ngIf="account && !isSupportedNetwork" class="text-sm text-blue-500"
+      >(Unsupported network)</span
+    >
+
+    <!-- If unsupported -->
+    <button
+      *ngIf="!isSupportedNetwork"
+      class="switch-btn"
+      (click)="switchTo(11155111)"
+    >
+      Switch to Sepolia
+    </button>
+    <!-- warning msg -->
+    <div *ngIf="!isMetaMaskInstalled" class="text-sm text-red-500">
+      MetaMask not found — please install it.
+    </div>
+
+    <span class="text-green-500"> wallet : {{ account | formateAddress }}</span>
+    <!-- ✅ Copy Button -->
+    <button
+      class="btn btn-outline-primary rounded text-xs"
+      (click)="copyAddress()"
+    >
+      Copy
+    </button>
+
+    <!-- ✅ Open Explorer -->
+    <!-- <button
+              class="btn btn-outline-info rounded px-2 text-xs"
+              (click)="openInExplorer()"
+          >
+              Explorer
+    </button> -->
+    <span *ngIf="account && balance">
+      Bal : {{ balance | number : "1.4-4" }} {{ nativeSymbol }}
+    </span>
+    <button
+      class="btn btn-outline-primary rounded px-2 text-xs"
+      (click)="signMessage()"
+    >
+      Sign Message
+    </button>
+    <button
+      class="btn btn-warning-500 ms ms-2 rounded-lg px-5 font-medium text-white transition"
+      (click)="checkBalance()"
+    >
+      Check Token Balance
+    </button>
+    <button
+      (click)="sendEth()"
+      class="btn btn-warning-500 ms ms-2 rounded-lg px-5 font-medium text-white transition"
+    >
+      Send Sepollia Eth
+    </button>
+    <button
+      class="btn btn-secondary ms ms-2 rounded-lg px-5 font-medium text-white transition"
+      (click)="disConnectWallet()"
+    >
+      Disconnect
+    </button>
+  </div>
+</div>
+
+<!-- bottom div -->
+<div class="mt-3 flex justify-end gap-5">
+  <div>
+    <button
+      class="btn btn-warning-500 ms ms-2 rounded-lg px-5 font-medium text-white transition"
+      (click)="getTokenInfo()"
+    >
+      Check Token Info
+    </button>
+  </div>
+  <div>
+    <button
+      class="btn btn-warning-500 ms ms-2 rounded-lg px-5 font-medium text-white transition"
+      (click)="getTokenBal()"
+    >
+      Check Token balnce
+    </button>
+  </div>
+  <div>
+    <button
+      class="btn btn-warning-500 ms ms-2 rounded-lg px-5 font-medium text-white transition"
+      (click)="transferToken()"
+    >
+      Transfer Token (att)
+    </button>
+  </div>
+  <div>
+    <button
+      class="btn btn-secondary ms ms-2 rounded-lg px-5 font-medium text-white transition"
+      (click)="goToSwapUi()"
+    >
+      Token swaping
+    </button>
+  </div>
+</div>
